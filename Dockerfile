@@ -1,4 +1,4 @@
-# Use official PHP 8.2 FPM Alpine image
+# Official PHP 8.2 FPM image
 FROM php:8.2-fpm-alpine
 
 # Set working directory
@@ -19,8 +19,9 @@ RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" \
 # Laravel public folder
 ENV WEBROOT=/var/www/html/public
 
-# Expose port 8080 for Render
+# Expose the HTTP port for Render
 EXPOSE 8080
 
-# Run PHP-FPM as www-data user on TCP 8080
+# Run PHP-FPM in foreground, TCP mode, as www-data
+USER www-data
 CMD ["php-fpm", "-F", "-R", "-O", "listen=0.0.0.0:8080"]
