@@ -19,11 +19,6 @@ RUN apk add --no-cache \
 # Copy project files including pre-built vendor folder
 COPY . .
 
+RUN composer install --no-dev --optimize-autoloader
 
-
-# Expose HTTP port for Render
-EXPOSE 8080
-
-# Run PHP-FPM as www-data on TCP port 8080
-USER www-data
-CMD ["php-fpm", "-F", "-R", "-O", "listen=0.0.0.0:8080"]
+RUN php artisan key:generate
