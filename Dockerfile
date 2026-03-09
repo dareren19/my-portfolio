@@ -1,8 +1,7 @@
 # Base image: PHP 8.2 FPM Alpine
 FROM php:8.2-fpm-alpine
 
-# Set working directory
-WORKDIR /var/www/html
+
 
 # Install system dependencies
 RUN apk add --no-cache \
