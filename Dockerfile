@@ -1,52 +1,49 @@
-# Use official PHP 8.2 FPM Alpine image
+# Use PHP 8.2 FPM Alpine
 FROM php:8.2-fpm-alpine
 
-# Install system dependencies
-RUN apk add --no-cache \
-    bash \
-    git \
-    unzip \
-    curl \
-    libzip-dev \
-    oniguruma-dev \
-    icu-dev \
-    zip \
-    autoconf \
-    g++ \
-    make \
-    && docker-php-ext-install pdo pdo_mysql mbstring zip intl opcache
+# System deps
+RUN apk add --no-cache bash git unzip curl libzip-dev oniguruma-dev icu-dev zip autoconf g++ make
 
-# Install Composer globally
+# PHP extensions
+RUN docker-php-ext-install pdo pdo_mysql mbstring zip intl opcache
+
+# Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Set working directory
+# Working directory
 WORKDIR /var/www/html
 
-# Copy composer files first for better caching
+# Copy composer files first
 COPY composer.json composer.lock ./
 
-# Install PHP dependencies
+# Copy .env.example as .env to prevent artisan errors
+COPY .env.example .env
+
+# Set permissions for storage and bootstrap/cache before composer
+RUN mkdir -p storage bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
+
+# Install dependencies safely
 RUN composer install --no-dev --optimize-autoloader --prefer-dist
 
-# Copy the rest of the application
+# Copy the rest of the app
 COPY . .
 
-# Cache Laravel configs, routes, views
+# Cache Laravel configs/routes/views
 RUN php artisan config:cache \
     && php artisan route:cache \
     && php artisan view:cache
 
-# Set permissions (www-data user)
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
+# Set proper permissions for Laravel
+RUN chown -R www-data:www-data storage bootstrap/cache public \
+    && chmod -R 775 storage bootstrap/cache public
 
-# Set environment variables
+# Env vars
 ENV APP_ENV=production \
     APP_DEBUG=false \
     WEBROOT=/var/www/html/public
 
-# Expose port 8080 for Render
 EXPOSE 8080
 
-# Use PHP-FPM as entrypoint
-CMD ["php-fpm", "-F", "-R", "-O", "-y", "/usr/local/etc/php-fpm.conf", "-R"]
+CMD ["php-fpm", "-F", "-R"]
