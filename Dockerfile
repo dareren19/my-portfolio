@@ -1,23 +1,24 @@
-# Base image: PHP 8.2 FPM Alpine
-FROM php:8.2-fpm-alpine
-
-# Set working directory
-WORKDIR /var/www/html
+FROM php:8.2-fpm
 
 # Install system dependencies
-RUN apk add --no-cache \
-    bash \
+RUN apt-get update && apt-get install -y \
     git \
-    unzip \
     curl \
-    libzip-dev \
-    oniguruma-dev \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
     zip \
-    supervisor \
-    && docker-php-ext-install pdo pdo_mysql mbstring zip
+    unzip
 
-# Copy project files including pre-built vendor folder
+# Install PHP extensions
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www/html
 COPY . .
 
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --no-dev
 
+CMD php artisan serve --host=0.0.0.0 --port=${PORT}
