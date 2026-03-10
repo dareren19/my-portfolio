@@ -39,11 +39,7 @@ RUN chmod -R 777 storage \
     && touch storage/logs/laravel.log \
     && chmod 666 storage/logs/laravel.log
 
-# Laravel optimizations (run AFTER permissions are set)
-RUN php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache
-
-EXPOSE ${PORT:-10000}
-
-CMD php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
+CMD php artisan config:clear && \
+    php artisan route:clear && \
+    php artisan view:clear && \
+    php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
