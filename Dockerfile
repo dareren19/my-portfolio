@@ -7,7 +7,7 @@ COPY . .
 RUN npm run build
 
 # PHP stage
-FROM php:8.2-cli AS php
+FROM php:8.2-cli
 
 # Install PHP extensions
 RUN apt-get update && apt-get install -y \
@@ -32,13 +32,17 @@ COPY --from=node /app/public/build /var/www/html/public/build
 # Install PHP dependencies
 RUN composer install --no-dev
 
-# Laravel optimizations
+# 🔴 CRITICAL: Set proper permissions BEFORE caching
+RUN chmod -R 777 storage \
+    && chmod -R 777 bootstrap/cache \
+    && mkdir -p storage/logs \
+    && touch storage/logs/laravel.log \
+    && chmod 666 storage/logs/laravel.log
+
+# Laravel optimizations (run AFTER permissions are set)
 RUN php artisan config:cache \
     && php artisan route:cache \
     && php artisan view:cache
-
-# Set permissions
-RUN chmod -R 775 storage bootstrap/cache
 
 EXPOSE ${PORT:-10000}
 
